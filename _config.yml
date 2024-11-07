@@ -3,3 +3,7 @@ description: Stay frosty.
 theme: just-the-docs
 
 color_scheme: dark
+
+  collections:
+    writeups:
+      name: writeups
