@@ -2,7 +2,7 @@
 layout: default
 title: Recollection
 parent: Sherlocks
-nav_order: 3
+nav_order: 2
 ---
 
 https://seanthegeek.net/1172/how-to-install-volatility-2-and-volatility-3-on-debian-ubuntu-or-kali-linux/
