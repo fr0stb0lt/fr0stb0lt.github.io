@@ -6,5 +6,3 @@ permalink: /writeups/
 has_children: true
 ---
 
-<p>Syke </p>
-
