@@ -18,7 +18,7 @@ title: Fr0stblog # the main title
 
 tagline: Stay frosty. # it will display as the subtitle
 
-description: >- # used by seo meta and the atom feed
+description: # used by seo meta and the atom feed
  
 
 # Fill in the protocol & hostname for your site.
