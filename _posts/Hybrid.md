@@ -1,0 +1,83 @@
+---
+title: Hybrid
+date: 2024-12-13 11:00:00
+categories: [Windows]
+tags: [vulnlab] [active directory]   # TAG names should always be lowercase
+description: Writeup of the Hybrid chain on Vulnlab
+---
+
+#Hybrid
+
+## Enumeration
+
+While scanning these machines we find the following:
+
+### mail01
+
+```
+Nmap scan report for 10.10.138.70
+Host is up, received user-set (0.014s latency).
+Scanned at 2023-10-12 18:55:25 CEST for 333s
+Not shown: 65434 closed tcp ports (reset), 86 filtered tcp ports (no-response)
+PORT      STATE SERVICE  REASON         VERSION
+22/tcp    open  ssh      syn-ack ttl 63 OpenSSH 8.9p1 Ubuntu 3ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+25/tcp    open  smtp     syn-ack ttl 63 Postfix smtpd
+80/tcp    open  http     syn-ack ttl 63 nginx 1.18.0 (Ubuntu)
+110/tcp   open  pop3     syn-ack ttl 63 Dovecot pop3d
+111/tcp   open  rpcbind  syn-ack ttl 63 2-4 (RPC #100000)
+143/tcp   open  imap     syn-ack ttl 63 Dovecot imapd (Ubuntu)
+587/tcp   open  smtp     syn-ack ttl 63 Postfix smtpd
+993/tcp   open  ssl/imap syn-ack ttl 63 Dovecot imapd (Ubuntu)
+995/tcp   open  ssl/pop3 syn-ack ttl 63 Dovecot pop3d
+2049/tcp  open  nfs_acl  syn-ack ttl 63 3 (RPC #100227)
+36127/tcp open  mountd   syn-ack ttl 63 1-3 (RPC #100005)
+38229/tcp open  mountd   syn-ack ttl 63 1-3 (RPC #100005)
+38815/tcp open  status   syn-ack ttl 63 1 (RPC #100024)
+41453/tcp open  mountd   syn-ack ttl 63 1-3 (RPC #100005)
+43175/tcp open  nlockmgr syn-ack ttl 63 1-4 (RPC #100021)
+Service Info: Host:  mail01.hybrid.vl; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+### dc01
+
+```
+Nmap scan report for 10.10.138.69
+Host is up, received user-set (0.016s latency).
+Scanned at 2023-10-12 18:55:25 CEST for 333s
+Not shown: 65514 filtered tcp ports (no-response)
+PORT      STATE SERVICE       REASON          VERSION
+53/tcp    open  domain        syn-ack ttl 127 Simple DNS Plus
+88/tcp    open  kerberos-sec  syn-ack ttl 127 Microsoft Windows Kerberos (server time: 2023-10-12 17:00:09Z)
+135/tcp   open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+139/tcp   open  netbios-ssn   syn-ack ttl 127 Microsoft Windows netbios-ssn
+389/tcp   open  ldap          syn-ack ttl 127 Microsoft Windows Active Directory LDAP (Domain: hybrid.vl0., Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds? syn-ack ttl 127
+464/tcp   open  kpasswd5?     syn-ack ttl 127
+593/tcp   open  ncacn_http    syn-ack ttl 127 Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ssl/ldap      syn-ack ttl 127 Microsoft Windows Active Directory LDAP (Domain: hybrid.vl0., Site: Default-First-Site-Name)
+3268/tcp  open  ldap          syn-ack ttl 127 Microsoft Windows Active Directory LDAP (Domain: hybrid.vl0., Site: Default-First-Site-Name)
+3269/tcp  open  ssl/ldap      syn-ack ttl 127 Microsoft Windows Active Directory LDAP (Domain: hybrid.vl0., Site: Default-First-Site-Name)
+3389/tcp  open  ms-wbt-server syn-ack ttl 127 Microsoft Terminal Services
+5985/tcp  open  http          syn-ack ttl 127 Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+9389/tcp  open  mc-nmf        syn-ack ttl 127 .NET Message Framing
+49668/tcp open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+49669/tcp open  ncacn_http    syn-ack ttl 127 Microsoft Windows RPC over HTTP 1.0
+49670/tcp open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+49671/tcp open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+63742/tcp open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+63751/tcp open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+64485/tcp open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+Service Info: Host: DC01; OS: Windows; CPE: cpe:/o:microsoft:windows
+```
+
+## Port 80 
+We find that the mail01 server has some mail services running, NFS and has joined a Active Directory.
+On port 80 we find a RoundCube Web interface.
+
+![Roundcube interface](/assets/img/post_images/Hyrbid/Hybrid_01.png)
+
+
+
+
+
+
